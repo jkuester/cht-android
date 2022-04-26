@@ -2,6 +2,7 @@ package org.medicmobile.webapp.mobile;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
+import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
 import static android.app.Activity.RESULT_CANCELED;
 import static android.app.Activity.RESULT_OK;
 import static org.junit.Assert.assertEquals;
@@ -56,6 +57,40 @@ public class RequestLocationPermissionActivityTest {
 				//> GIVEN
 				ShadowActivity shadowActivity = shadowOf(requestLocationPermissionActivity);
 				shadowActivity.grantPermissions(ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION);
+
+				//> WHEN
+				requestLocationPermissionActivity.onClickOk(null);
+			});
+			scenario.moveToState(Lifecycle.State.DESTROYED);
+
+			//> THEN
+			ActivityResult result = scenario.getResult();
+			assertEquals(RESULT_OK, result.getResultCode());
+			Intent resultIntent = result.getResultData();
+			assertNull(resultIntent);
+
+			medicLogMock.verify(() -> MedicLog.trace(
+				any(RequestLocationPermissionActivity.class),
+				eq("RequestLocationPermissionActivity :: User agree with prominent disclosure message.")
+			));
+			medicLogMock.verify(() -> MedicLog.trace(
+				any(RequestLocationPermissionActivity.class),
+				eq("RequestLocationPermissionActivity :: User allowed at least one location permission. Fine:%s, Coarse:%s"),
+				eq(true),
+				eq(true)
+			));
+		}
+	}
+
+	@Test
+	public void onClickAllow_with_COARSE_PermissionGranted_setResolveOk() {
+		try(MockedStatic<MedicLog> medicLogMock = mockStatic(MedicLog.class)) {
+			ActivityScenario<RequestLocationPermissionActivity> scenario = scenarioRule.getScenario();
+
+			scenario.onActivity(requestLocationPermissionActivity -> {
+				//> GIVEN
+				ShadowActivity shadowActivity = shadowOf(requestLocationPermissionActivity);
+				shadowActivity.grantPermissions(ACCESS_COARSE_LOCATION);
 
 				//> WHEN
 				requestLocationPermissionActivity.onClickOk(null);
